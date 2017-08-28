@@ -130,9 +130,29 @@ n_sample=5000
 train_samples = train.sample(n_sample)
 
 # get first data
-data = train_samples.iloc[0].copy()
+data = train_samples.iloc[0,2:].copy()
+data.index = pd.to_datetime(data.index)
+data = data.astype(float).fillna(0.0)
+week_data=data.groupby([(data.index.year),(data.index.week)]).median()
+week_data = week_data.iloc[19:80]
 
-data[2:].plot()
+seq_data = week_data.values
+
+seq_len=26
+pred_len = 5
+               
+x_train, y_train, x_test, y_test, scales = process_seq_data(seq_data, seq_len, pred_len, train_split=20, normalize_window=False)
+
+lstm_model = build_model([1, seq_len, 52, pred_len],np.median(seq_data[:51])/1000)
+epochs=30
+lstm_model.fit(
+    x_train,
+    y_train,
+    #batch_size=128,
+    epochs=epochs,
+    validation_split=0.1)
+
+    
 
 tot_pred_result = list()
 tot_median_result = list()

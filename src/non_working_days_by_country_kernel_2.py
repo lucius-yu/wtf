@@ -52,11 +52,27 @@ result.columns=['origine']
 #we need to remove train.origine so that the train can be flattened with melt
 del train['origine']
 
-#let's flatten the train as did clustifier and initialize a "ferie" columns instead of a weekend column
-train = pd.melt(train[list(train.columns[-49:])+['Page']], id_vars='Page', var_name='date', value_name='Visits')
-train['date'] = train['date'].astype('datetime64[ns]')
-train['ferie'] = ((train.date.dt.dayofweek) >=5).astype(float)
-train['origine']=train['Page'].apply(lambda x:re.split(".wikipedia.org", x)[0][-2:])
+''' Debug using only last 49 result
+'''
+only_use_last = False
+if only_use_last:
+    # let's flatten the train as did clustifier and initialize a "ferie" columns instead of a weekend column
+    # only use the last 48 days for training, i.e. get median
+    train = pd.melt(train[list(train.columns[-49:])+['Page']], id_vars='Page', var_name='date', value_name='Visits')
+    train['date'] = train['date'].astype('datetime64[ns]')
+    train['ferie'] = ((train.date.dt.dayofweek) >=5).astype(float)
+    train['origine']=train['Page'].apply(lambda x:re.split(".wikipedia.org", x)[0][-2:])
+
+else:    
+    '''
+    drop the initial nan and then calculate the median, should we use more ?
+    raw_train = pd.read_csv("../input/train_1.csv.zip", compression='zip')
+    raw_train.insert(loc=1, column='origine',value=raw_train.Page.apply(lambda x:re.split(".wikipedia.org", x)[0][-2:]))
+    '''
+    train = pd.melt(train[list(train.columns[2:])+['Page']], id_vars='Page', var_name='date', value_name='Visits')
+    train = train.iloc[train.groupby('Page').apply(lambda x: x.Visits.notnull().cumsum()>0).values]
+    train.fillna(0.0, inplace=True)
+    train.insert(loc=1, column='origine',value=train.Page.apply(lambda x:re.split(".wikipedia.org", x)[0][-2:]))
 
 #let's join with result to replace 'ts' and 'er'
 join=train.loc[train.origine.isin(["ts","er"]), ['Page']]
@@ -129,6 +145,11 @@ test.loc[(test.origine=='es')&(test.date.isin(test_es)), 'ferie']=1
 test.loc[(test.origine=='ja')&(test.date.isin(test_ja)), 'ferie']=1
 test.loc[(test.origine=='zh')&(test.date.isin(test_zh)), 'ferie']=1
 test.loc[(test.origine=='zh')&(test.date.isin(test_o_zh)), 'ferie']=0
+
+
+train['date'] = train['date'].astype('datetime64[ns]')
+train['ferie'] = ((train.date.dt.dayofweek) >=5).astype(float)
+train['origine']=train['Page'].apply(lambda x:re.split(".wikipedia.org", x)[0][-2:])
 
 train_page_per_dow = train.groupby(['Page','ferie']).median().reset_index()
 test = test.merge(train_page_per_dow, how='left')
