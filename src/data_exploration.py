@@ -10,10 +10,43 @@ import numpy as np
 import matplotlib.pyplot as plt
 import re
 
+from scipy.fftpack import dct, fft, idct
+
 # load train
 train = pd.read_csv('../input/train_1.csv.zip',compression='zip').fillna(0)
 train.head()
 
+# plot for the na
+# initial na was 20800, the final nais 3465
+train.iloc[:,1:].isnull().sum().plot()
+# treat the nan as 0 . initial 0's was 23900, last 0's 4966
+train.fillna(0).iloc[:,1:].apply(lambda x: x==0).sum().plot()
+
+'''
+median_access per page
+total median_access == 0 are 11971. the last 0's 4966, looks not too bad.
+Note, the last 60 days median is more close to result, 5023 vs 4966
+'''
+median_access = train.fillna(0).iloc[:,-60:].apply(lambda x: x.median(),axis=1).rename('median_access')
+(median_access == 0).sum()
+
+'''
+mean_access per page
+total mean_access <= 1 are 2878. the last 0's 4966, looks better than median access
+'''
+mean_access = train.fillna(0).iloc[:,-60:].apply(lambda x: x.mean(),axis=1).rename('mean_access')
+(mean_access < 1).sum()
+
+# interesting, the access to 94161 (claud shannon) will be peak at 4.30 which is his birthday 
+idx_rand = np.random.randint(0,train.shape[0],1)[0]
+print idx_rand
+train.iloc[idx_rand, 1:].plot(figsize=(12,8))
+print train.iloc[idx_rand].Page
+
+
+'''
+
+'''
 # downcast to integer
 for col in train.columns[1:]:
     train[col]=train[col].astype(np.int16)
@@ -27,6 +60,10 @@ def get_language(page):
 
 # add column for language
 train['lang'] = train.Page.map(get_language)
+
+
+
+
 
 # better edition just cut and get language 
 train['origine']=train['Page'].apply(lambda x:re.split(".wikipedia.org", x)[0][-2:])
