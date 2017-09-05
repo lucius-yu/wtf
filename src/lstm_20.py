@@ -34,7 +34,7 @@ def symemetric_mean_absolute_percentage_error(y_true, y_pred):
 
 def smape(y_pred, y_true):
     diff = np.abs(y_true-y_pred) / (np.abs(y_true) + np.abs(y_pred))
-    return 1. * np.mean(diff)
+    return 200. * np.mean(diff)
 
 def min_max_transform(window_data):
     scaled_data = []
@@ -129,31 +129,58 @@ train.insert(loc=1, column='lang',value=train.Page.map(get_language))
 n_sample=5000
 train_samples = train.sample(n_sample)
 
-# get first data
-data = train_samples.iloc[0,2:].copy()
-data.index = pd.to_datetime(data.index)
-data = data.astype(float).fillna(0.0)
-week_data=data.groupby([(data.index.year),(data.index.week)]).median()
-week_data = week_data.iloc[19:80]
-
-seq_data = week_data.values
-
-seq_len=26
-pred_len = 5
-               
-x_train, y_train, x_test, y_test, scales = process_seq_data(seq_data, seq_len, pred_len, train_split=20, normalize_window=False)
-
-lstm_model = build_model([1, seq_len, 52, pred_len],np.median(seq_data[:51])/1000)
-epochs=30
-lstm_model.fit(
-    x_train,
-    y_train,
-    #batch_size=128,
-    epochs=epochs,
-    validation_split=0.1)
-
+tot_pred_result = list()
+tot_median_result = list()
+for i in range(10):
+    # get first data
+    data = train_samples.iloc[i,2:].copy()
+    # drop the initial nan
+    data = data[data.notnull().cumsum()>0]
     
+    data.index = pd.to_datetime(data.index)
+    data = data.astype(float).fillna(0.0)
+   
+    week_data=data.groupby([(data.index.year),(data.index.week)]).median()
+    #week_data = week_data.iloc[1:-1]
 
+    seq_data = week_data.values
+    seq_len=30
+    pred_len = 1
+               
+    x_train, y_train, x_test, y_test, scales = process_seq_data(seq_data, seq_len, pred_len, train_split=30, normalize_window=False)
+
+    lstm_model = build_model([1, seq_len, 50, pred_len],np.median(seq_data[:(seq_data.shape[0]-x_test.shape[0])])/1000.0)
+    epochs=25
+    lstm_model.fit(
+                   x_train,
+                   y_train,
+                   #batch_size=128,
+                   epochs=epochs,
+                   validation_split=0.1)
+
+    predicted = lstm_model.predict(x_test)
+    
+    # real data
+    indexed_data = data.groupby([(data.index.year),(data.index.week)]).apply(lambda x: x.values)
+    ds_real_data = indexed_data.loc[week_data.iloc[-predicted.shape[0]:].index]
+    ds_real_data.reset_index(inplace=True, drop=True)
+    pred_result = list()
+    median_result = list()
+    median = np.median(seq_data[:(seq_data.shape[0]-x_test.shape[0])])
+    for index, frame in ds_real_data.iteritems():
+        if frame.shape[0]==7:
+            pred_result.append(smape(predicted[index]*np.ones(7), frame))
+            median_result.append(smape(median*np.ones(7),frame))
+    #print(pred_result)
+    if np.mean(pred_result) != np.nan:
+        print(np.mean(pred_result))
+        tot_pred_result.append(np.mean(pred_result))
+        #print(median_result)
+        print(np.mean(median_result))
+        tot_median_result.append(np.mean(median_result))
+print(np.mean(tot_pred_result))    
+print(np.mean(tot_median_result))    
+    
 tot_pred_result = list()
 tot_median_result = list()
 for i in range(100):
