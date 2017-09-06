@@ -39,9 +39,9 @@ mean_access = train.fillna(0).iloc[:,-60:].apply(lambda x: x.mean(),axis=1).rena
 
 # interesting, the access to 94161 (claud shannon) will be peak at 4.30 which is his birthday 
 idx_rand = np.random.randint(0,train.shape[0],1)[0]
-print idx_rand
+print(idx_rand)
 train.iloc[idx_rand, 1:].plot(figsize=(12,8))
-print train.iloc[idx_rand].Page
+print(train.iloc[idx_rand].Page)
 
 
 '''

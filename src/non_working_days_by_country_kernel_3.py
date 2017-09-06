@@ -44,7 +44,6 @@ test1 = test1.merge(train[['Page','Visits']], on='Page', how='left')
 #test1[['Id','Visits']].to_csv('sub.csv', index=False)
 
 
-
 # This Python 3 environment comes with many helpful analytics libraries installed
 # It is defined by the kaggle/python docker image: https://github.com/kaggle/docker-python
 # For example, here's several helpful packages to load in 
@@ -72,7 +71,7 @@ import gc; gc.enable()
 from sklearn.feature_extraction import text
 from sklearn import naive_bayes
 
-train = pd.read_csv("../input/train_1.csv")
+train = pd.read_csv("../input/train_1.csv.zip", compression='zip')
 #determine idiom with URL
 train['origine']=train['Page'].apply(lambda x:re.split(".wikipedia.org", x)[0][-2:])
 '''
@@ -170,7 +169,7 @@ train.loc[(train.origine=='zh')&(train.date.isin(train_zh)), 'ferie']=1
 train.loc[(train.origine=='zh')&(train.date.isin(train_o_zh)), 'ferie']=0
 
 #same with test
-test = pd.read_csv("../input/key_1.csv")
+test = pd.read_csv("../input/key_1.csv.zip", compression='zip')
 test['date'] = test.Page.apply(lambda a: a[-10:])
 test['Page'] = test.Page.apply(lambda a: a[:-11])
 test['date'] = test['date'].astype('datetime64[ns]')
