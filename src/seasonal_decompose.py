@@ -41,7 +41,7 @@ def get_language(page):
 train.insert(loc=1, column='lang',value=train.Page.map(get_language))
 
 # sample from train data
-n_sample=200
+n_sample=1000
 train_samples = train.sample(n_sample)
 
 CELL_SIZE=20
@@ -63,6 +63,88 @@ def get_batch(series):
     
     return [x_seq[:, :, np.newaxis], y_seq]
  
+def decompose_processing(ts,freq):
+    ts_decomp = seasonal_decompose(ts,freq=freq,model="additive")
+    
+    # print information
+    print(abs(ts_decomp.seasonal).mean())
+    print(abs(ts_decomp.resid).mean())
+    print(abs(ts_decomp.trend).mean())
+    
+    # plot information
+    plt.subplot(411)
+    plt.plot(ts, label='Original')
+    plt.legend(loc='best')
+    plt.subplot(412)
+    plt.plot(ts_decomp.trend, label='Trend')
+    plt.legend(loc='best')
+    plt.subplot(413)
+    plt.plot(ts_decomp.seasonal,label='Seasonality')
+    plt.legend(loc='best')
+    plt.subplot(414)
+    plt.plot(ts_decomp.resid, label='Residuals')
+    plt.legend(loc='best')
+    plt.tight_layout()
+    
+    return ts_decomp
+    
+from statsmodels.tsa.stattools import adfuller
+def test_stationarity(timeseries):
+    
+    #Perform Dickey-Fuller test:
+    #print('Results of Dickey-Fuller Test:')
+    dftest = adfuller(timeseries, autolag='AIC')
+    dfoutput = pd.Series(dftest[0:4], index=['Test Statistic','p-value','#Lags Used','Number of Observations Used'])
+    for key,value in dftest[4].items():
+        dfoutput['Critical Value (%s)'%key] = value
+    #print(dfoutput)
+    return dftest[1]
+
+search_idx = [-3, -2,-1,0,1,2,3]  
+search_result = list()
+i=2
+i=206
+i=9
+
+for i in range(300):
+    series = train_samples.iloc[i,2:]
+    # drop the initial nan
+    series = series[series.notnull().cumsum()>0]
+    series = series.fillna(0.0)
+    series.index=pd.to_datetime(series.index)
+    series = series.astype('float32')
+    train_ts = series[:-PRED_STEPS]
+    test_ts = series[-PRED_STEPS:]
+    
+    y_true = train_ts[-60:]
+    result = list()
+    
+    if y_true.sum() > 49 and y_true.median() > 0.0:
+        for j in search_idx:
+            y_pred = y_true.sort_values()[24+j]
+            if y_pred == y_true.median() and j != 0:
+                result.append(10000.0)
+            else:
+                result.append(smape_sv(y_pred,y_true))   
+        if np.argmin(result) == 6:
+            print(i)
+        search_result.append(search_idx[np.argmin(result)])
+
+
+    print(smape_sv(y_true.mean(),y_true))
+    print(smape_sv(y_true.median(),y_true))
+    
+    print(smape_sv(y_true.mean(),test_ts))
+    print(smape_sv(y_true.median(),test_ts))
+    
+    test_ts = series[-PRED_STEPS:]
+    train_ts[-49:].plot()
+    test_ts.plot()
+    if train_ts.shape[0] > 50 and (train_ts>0).sum()>50:
+        if (test_stationarity(train_ts) > 0.5):
+            print(i)
+            print(test_stationarity(train_ts))
+
 # for each sample
 for i in range(n_sample):
     series = train_samples.iloc[i,2:]
@@ -77,17 +159,24 @@ for i in range(n_sample):
     test_ts = series[-PRED_STEPS:]
     # take the log
     train_ts_log = np.log(train_ts+1)
+    # seperate the weekdays
+    xx=train_ts_log[train_ts.index.weekday==2]
+    xx_decomp=decompose_processing(xx,36)
+    
+    test_stationarity(train_ts)
+    
     # decompose to trend and periodic
-    decomposition = seasonal_decompose(train_ts_log,freq=183,model="additive")
+    decomposition = decompose_processing(np.log(series),240)
     
     # trend, seasonal
     trend = decomposition.trend
     seasonal = decomposition.seasonal
     resid = decomposition.resid
     
-    if abs(seasonal).mean() > abs(resid).mean():
-        print(abs(seasonal).mean())
-        print(abs(resid).mean())
+    #if abs(seasonal).mean() > abs(resid).mean():
+    print(abs(seasonal).mean())
+    print(abs(resid).mean())
+    print(abs(trend).mean())
 
     '''    
     plt.plot(trend)

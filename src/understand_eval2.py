@@ -39,6 +39,15 @@ def smape(y_pred, y_true):
     diff[denominator == 0] = 0.0
     return diff
 
+# input, y_pred a single value
+def smape_sv(y_pred, y_true):
+    y_pred = np.ones(len(y_true)) * y_pred
+    return smape(y_pred, y_true).mean()
+
+
+  
+pd.options.display.max_rows = 999
+
 y_pred = np.array([1, 5.999])
 y_true = np.array([3, 6])
 smape(y_pred, y_true )

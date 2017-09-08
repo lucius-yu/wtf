@@ -86,7 +86,7 @@ for thres in thresholds:
     test_preds = preds > thres
     tn, fp, fn, tp = confusion_matrix(df_test.label.values, test_preds).ravel()
     print("tp=%d, fp=%d, gain=%d"%(tp, fp, tp-fp))
-    print tp/float(fp+tp)
+    print(tp/float(fp+tp))
 
 threshold=0.67
 

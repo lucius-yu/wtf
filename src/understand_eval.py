@@ -48,8 +48,13 @@ for different x, we can see
 y_true = np.array([3])
 y_pred = np.array([1])
 x = np.linspace(0,10,1000)
+
 res = [smape(y_true, i * y_pred) for i in x]
 plt.plot(x, res)
+
+
+res = [smape(np.log(y_true), np.log(i * y_pred)) for i in x]
+plt.plot(x, (res))
 
 
 ''' 
