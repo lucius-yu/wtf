@@ -126,4 +126,4 @@ test = test.merge(train_page_per_dow, how='left')
 test.loc[test.Visits.isnull(), 'Visits'] = 0
 test['Visits']=(test['Visits']*10+np.random.randint(0,2,len(test['Visits']))).astype('int')/10
 # test['Visits']=((test['Visits']*10).astype('int')/10 + test1['Visits'])/2
-test[['Id','Visits']].to_csv('../submit/res.csv', index=False)
+test[['Id','Visits']].to_csv('../submit/res_2.csv', index=False)

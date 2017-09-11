@@ -8,6 +8,7 @@ Created on Mon Aug 21 11:23:52 2017
 
 import numpy as np
 import pandas as pd
+import re
 
 from multiprocessing import Pool
 from ast import literal_eval
@@ -117,7 +118,7 @@ class TrainingCtrl:
 
 from workalendar.europe import France, Germany, UnitedKingdom, Spain
 from workalendar.usa import UnitedStates
-from workalendar.asia import Japan, HongKong
+from workalendar.asia import Japan
 
 def get_holiday(cal):
     holiday = [str(day[0]) for day in cal.holidays(2015)] + \
@@ -156,5 +157,29 @@ def get_holidays():
                    ['2017-01-22', '2017-02-04', '2017-04-01', '2017-05-27', '2017-09-30']
 
     return us_holiday, uk_holiday, de_holiday, fr_holiday, ru_holiday, es_holiday, ja_holiday, zh_holiday, zh_o_holiday
+
+# this is only to get the language for page on wikipedia.org
+def get_language(page):
+    res = re.search('[a-z][a-z].wikipedia.org',page)
+    if res:
+        return res.group(0)[0:2]
+    return 'na'
+
+# parse the page to get article, project, access type, agent
+def parse_page(page, ret_series=False):
+    matchObj = re.match(r'(.*)_([a-z][a-z].wikipedia.org)_(.*)_(spider|all-agents)',page)
+    matchObj = re.match(r'(.*)_(\w+.mediawiki.org)_(.*)_(spider|all-agents)',page) if not matchObj else matchObj
+    matchObj = re.match(r'(.*)_(\w+.wikimedia.org)_(.*)_(spider|all-agents)',page) if not matchObj else matchObj
     
-             
+    if not matchObj:
+        print("Page can not parsed")
+        print(page)
+        article, project, access, agent = None, None, None, None
+    else:
+        article, project, access, agent = matchObj.group(1), matchObj.group(2), \
+                                          matchObj.group(3), matchObj.group(4)
+    if ret_series:
+        return pd.Series({'article': article, 'project': project, 'access': access, 'agent': agent})
+    else:
+        return article, project, access, agent
+          
