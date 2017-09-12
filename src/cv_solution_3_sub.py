@@ -121,5 +121,6 @@ if submission:
     s3_result['Visits'] = round(s3_result['visits'])
 
     s3_result.to_csv('../submit/solution_3_raw.csv',index=False)
+    s3_result[['Id','Visits']].to_csv('../submit/solution_3.csv', index=False)
 # load model example
 # model = lgb.Booster(model_file='../models/model_'+str(i) + '_' + df_y_train.name + '.mdl')
