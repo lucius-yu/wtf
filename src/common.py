@@ -207,4 +207,19 @@ def get_smape_scores(df_real, df_pred, round_flag=False):
     if round_flag:
         return df_valid.groupby('date').apply(lambda x: smape(x['Real_Visits'], round(x['Visits'])))
     return df_valid.groupby('date').apply(lambda x: smape(x['Real_Visits'], x['Visits']))
+
+'''
+mix the results. 
+
+for df_result_1, the result before and include mix_date will be choosen.
+for df_result_2, the result after mix_date will be choosen
+for df_result_1 and df_result_2, should contain columns. 'Page','Id','date','Visits'
+'''
+def mix_results(df_result_1, df_result_2, mix_date='2017-09-27'):
     
+    x = df_result_1[['Page','Id','date','Visits']].copy()
+    y = df_result_2[['Page','Id','date','Visits']].copy()
+    
+    df_result = x[x.date<=mix_date].append(y[y.date>mix_date]).sort_index()
+    
+    return df_result
