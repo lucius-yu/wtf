@@ -40,6 +40,9 @@ Thumbs.db
 
 # Other #
 #########
+models/
+output/
+output_28_cv/
 .project
 .pydevproject
 .ropeproject

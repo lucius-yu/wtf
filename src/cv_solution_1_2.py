@@ -253,7 +253,7 @@ if submission:
     s2_result = solution_2(train, real_test, s1_result)
     
     s1_result['Visits'] = round(s1_result['Visits'])
-    s2_result['Visits'] = round(s2_result['visits'])
+    s2_result['Visits'] = round(s2_result['Visits'])
     
     s1_result.to_csv('../submit/solution_1_raw.csv',index=False)
     s2_result.to_csv('../submit/solution_2_raw.csv',index=False)
