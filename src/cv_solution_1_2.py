@@ -15,8 +15,6 @@ from common import parse_page
 from common import get_language
 from common import TrainingCtrl, smape
 
-train = pd.read_csv("../input/train_2.csv.zip",compression='zip')
-train = train.fillna(0.)
 
 def generate_train_data(df_data, start_date, end_date):
     cols = ['Page'] + list(map(str,pd.date_range(start=start_date, end=end_date).strftime('%Y-%m-%d')))
@@ -177,50 +175,85 @@ def solution_2(df_train, df_test, s1_result=None):
 # cross-validation date
 # real test start date is 2017-09-13, Wensday. 
 # candidate:  2016-09-14 : 2016-11-14, 2017-03-15:2017-05-15
+cross_validation = False
+submission = True
 
-valid_dates = [('2015-07-01', '2016-09-13', '2016-09-14', '2016-11-14'), 
-               ('2015-07-01', '2017-03-14', '2017-03-15', '2017-05-15'),
-               ('2015-07-01', '2016-10-11', '2016-10-12', '2016-12-12'), 
-               ('2015-07-01', '2017-05-09', '2017-05-10', '2017-07-10')]
+# load date
+train = pd.read_csv("../input/new_train_2.csv.zip",compression='zip')
+train = train.fillna(0.)
 
 
-cv_scores = pd.read_csv('../output/cv_scores.csv') if os.path.isfile('../output/cv_scores.csv') else pd.DataFrame()
+if cross_validation:
+    valid_dates = [('2015-07-01', '2016-09-13', '2016-09-14', '2016-11-14'), 
+                   ('2015-07-01', '2017-03-14', '2017-03-15', '2017-05-15'),
+                   ('2015-07-01', '2016-10-11', '2016-10-12', '2016-12-12'), 
+                   ('2015-07-01', '2017-05-09', '2017-05-10', '2017-07-10')]
 
-for train_start_date, train_end_date, valid_start_date, valid_end_date in valid_dates:
-    # solution 1 validation
-    # solution 1 will have 'Visits' and 'Visits_1' 
-    # Visits_1 is mixed with randint
-    df_train = generate_train_data(train, train_start_date, train_end_date)
-    df_test = generate_test_data(train, start_date=valid_start_date, end_date=valid_end_date)
-    df_real = generate_real_data(train, start_date=valid_start_date, end_date=valid_end_date)
 
-    s1_result = solution_1(df_train, df_test)
-    s1_scores = get_smape_scores(df_real, s1_result, round_flag=False)
-    print("solutions_1 without round scores %f"%s1_scores.mean())
-    s1_scores.to_csv('../output/cv_solution_1_without_round_' + valid_start_date + '_' + valid_end_date, index=False)
-    cv_scores = cv_scores.append(pd.DataFrame({'solution': ['solution_1'], 'round': [False],
+    cv_scores = pd.read_csv('../output/cv_scores.csv') if os.path.isfile('../output/cv_scores.csv') else pd.DataFrame()
+
+    for train_start_date, train_end_date, valid_start_date, valid_end_date in valid_dates:
+        # solution 1 validation
+        # solution 1 will have 'Visits' and 'Visits_1' 
+        # Visits_1 is mixed with randint
+        df_train = generate_train_data(train, train_start_date, train_end_date)
+        df_test = generate_test_data(train, start_date=valid_start_date, end_date=valid_end_date)
+        df_real = generate_real_data(train, start_date=valid_start_date, end_date=valid_end_date)
+
+        s1_result = solution_1(df_train, df_test)
+        s1_scores = get_smape_scores(df_real, s1_result, round_flag=False)
+        print("solutions_1 without round scores %f"%s1_scores.mean())
+        s1_scores.to_csv('../output/cv_solution_1_without_round_' + valid_start_date + '_' + valid_end_date, index=False)
+        cv_scores = cv_scores.append(pd.DataFrame({'solution': ['solution_1'], 'round': [False],
                                 'valid_start_date': [valid_start_date], 'score': [s1_scores.mean()]}))
     
-    s1_scores = get_smape_scores(df_real, s1_result, round_flag=True)
-    print("solutions_1 with round scores %f"%s1_scores.mean())
-    s1_scores.to_csv('../output/cv_solution_1_with_round' + valid_start_date + '_' + valid_end_date, index=False)
-    cv_scores = cv_scores.append(pd.DataFrame({'solution':['solution_1'], 'round': [True],
-                                'valid_start_date': [valid_start_date], 'score': [s1_scores.mean()]}))
+        s1_scores = get_smape_scores(df_real, s1_result, round_flag=True)
+        print("solutions_1 with round scores %f"%s1_scores.mean())
+        s1_scores.to_csv('../output/cv_solution_1_with_round_' + valid_start_date + '_' + valid_end_date, index=False)
+        cv_scores = cv_scores.append(pd.DataFrame({'solution':['solution_1'], 'round': [True],
+                                                   'valid_start_date': [valid_start_date], 'score': [s1_scores.mean()]}))
    
 
-    # solution 2 validation, use copy to keep train not modified
-    s2_result = solution_2(df_train, df_test, s1_result)
-    s2_scores = get_smape_scores(df_real, s2_result, round_flag=False)
-    print("solutions_2 without round scores %f"%s2_scores.mean())
-    s2_scores.to_csv('../output/cv_solution_2_without_round_' + valid_start_date + '_' + valid_end_date, index=False)
-    cv_scores = cv_scores.append(pd.DataFrame({'solution': ['solution_2'], 'round': [False],
-                                'valid_start_date': [valid_start_date], 'score': [s2_scores.mean()]}))
+        # solution 2 validation, use copy to keep train not modified
+        s2_result = solution_2(df_train, df_test, s1_result)
+        s2_scores = get_smape_scores(df_real, s2_result, round_flag=False)
+        print("solutions_2 without round scores %f"%s2_scores.mean())
+        s2_scores.to_csv('../output/cv_solution_2_without_round_' + valid_start_date + '_' + valid_end_date, index=False)
+        cv_scores = cv_scores.append(pd.DataFrame({'solution': ['solution_2'], 'round': [False],
+                                                   'valid_start_date': [valid_start_date], 'score': [s2_scores.mean()]}))
    
     
-    s2_scores = get_smape_scores(df_real, s2_result, round_flag=True)
-    print("solutions_2 with round scores %f"%s2_scores.mean())
-    s2_scores.to_csv('../output/cv_solution_2_with_round' + valid_start_date + '_' + valid_end_date, index=False)
-    cv_scores = cv_scores.append(pd.DataFrame({'solution':['solution_2'], 'round': [True],
-                                'valid_start_date': [valid_start_date], 'score': [s2_scores.mean()]}))
+        s2_scores = get_smape_scores(df_real, s2_result, round_flag=True)
+        print("solutions_2 with round scores %f"%s2_scores.mean())
+        s2_scores.to_csv('../output/cv_solution_2_with_round_' + valid_start_date + '_' + valid_end_date, index=False)
+        cv_scores = cv_scores.append(pd.DataFrame({'solution':['solution_2'], 'round': [True],
+                                                   'valid_start_date': [valid_start_date], 'score': [s2_scores.mean()]}))
 
-cv_scores.to_csv('../output/cv_scores.csv',index=False)
+    cv_scores.to_csv('../output/cv_scores.csv',index=False)
+
+if submission:
+    # real solution
+    real_test = pd.read_csv("../input/key_2.csv.zip",compression='zip')
+    '''
+    # Be careful
+    # we might not have enough data from training
+    START_DATE='20170901'
+    END_DATE='20170910'
+
+    extra_train = pd.read_csv('../input/extra_train_'+START_DATE+'_'+END_DATE+'.csv.zip')
+    print(extra_train.iloc[:,-1].isnull().sum())
+    print(extra_train.iloc[:,-2].isnull().sum())
+    print(extra_train.iloc[:,-3].isnull().sum())
+    
+    real_train = train.merge(extra_train,how='left', on='Page')
+    real_train.fillna(0.0)
+    '''
+    
+    s1_result = solution_1(train, real_test)
+    s2_result = solution_2(train, real_test, s1_result)
+    
+    s1_result['Visits'] = round(s1_result['Visits'])
+    s2_result['Visits'] = round(s2_result['visits'])
+    
+    s1_result.to_csv('../submit/solution_1_raw.csv',index=False)
+    s2_result.to_csv('../submit/solution_2_raw.csv',index=False)

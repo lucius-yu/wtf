@@ -183,3 +183,28 @@ def parse_page(page, ret_series=False):
     else:
         return article, project, access, agent
           
+
+# function for cross-validation
+def generate_train_data(df_data, start_date, end_date):
+    cols = ['Page'] + list(map(str,pd.date_range(start=start_date, end=end_date).strftime('%Y-%m-%d')))
+    df_train = df_data.loc[:, cols]
+    return df_train
+
+def generate_test_data(df_data, start_date, end_date):
+    test_dates = list(map(str,pd.date_range(start=start_date, end=end_date).strftime('%Y-%m-%d')))
+    df_test = df_data.Page.apply(lambda x: pd.Series([str(x) + '_' + test_date for test_date in test_dates]))
+    df_test = pd.melt(df_test, value_name='Page', var_name='Id')
+    return df_test
+
+def generate_real_data(df_data, start_date, end_date):
+    cols = ['Page'] + list(map(str,pd.date_range(start=start_date, end=end_date).strftime('%Y-%m-%d')))
+    df_real = pd.melt(df_data.loc[:,cols], id_vars='Page', var_name='date', value_name='Real_Visits')
+    return df_real
+
+def get_smape_scores(df_real, df_pred, round_flag=False):
+    f_keys = ['Page', 'date']
+    df_valid = pd.merge(left=df_real[f_keys + ['Real_Visits']], right=df_pred[f_keys + ['Visits']], on=f_keys, how='left')
+    if round_flag:
+        return df_valid.groupby('date').apply(lambda x: smape(x['Real_Visits'], round(x['Visits'])))
+    return df_valid.groupby('date').apply(lambda x: smape(x['Real_Visits'], x['Visits']))
+    

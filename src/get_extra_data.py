@@ -2,7 +2,9 @@
 """
 Spyder Editor
 
-This is a temporary script file.
+Download data will have 36000 pags NaN. 
+It is worse than official provided data. official data nan for each day 1000-5000
+
 """
 
 import re
@@ -12,8 +14,6 @@ import pandas as pd
 import numpy as np
 
 from mwviews.api import PageviewsClient
-
-
 
 '''
 Page example:
@@ -130,7 +130,7 @@ def get_page_views(page, pv_client, start_date=datetime.date(2017, 9, 1), end_da
 train = pd.read_csv("../input/train_2.csv.zip",compression='zip')
 
 START_DATE='20170901'
-END_DATE='20170907'
+END_DATE='20170910'
 
 # cache dir
 cache_dir = '../cache/'
@@ -156,7 +156,7 @@ for i in range(8):
 
     
 filepath = '../input/extra_train_'+START_DATE+'_'+END_DATE+'.csv.zip'
-extra_train.to_csv(filepath, index=False)
+extra_train.to_csv(filepath, compression='zip', index=False)
 
 print("following pages downloading meet exception")
 print(exception_pages)
