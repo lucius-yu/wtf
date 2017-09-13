@@ -24,7 +24,7 @@ My final solution is based on LightGBM.
 
 ### data preprocessing
 
-Not so much, the number for page on each day could be from 0 , 1,1 to a big number. It will make training hard. So take the log of the number of visits.
+Not so much, the number for page on each day could be from 0 , 1, 2 ... to a big number. It will make training hard. So take the log of the number of visits.
 Meanwhile, to avoiding take the log of 0. then before take the log, +1 first. the formula is 
 ```
 y = np.log(x + 1)
